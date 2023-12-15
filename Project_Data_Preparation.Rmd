@@ -1,0 +1,169 @@
+---
+title: "Project_Data_Preparation"
+author: "Megan Glass"
+date: "2023-10-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Libraries 
+```{r}
+library(tidyverse)
+#install.packages("plotmo")
+library(plotmo)
+#install.packages("readxl")
+library(readxl)
+
+```
+
+##Load the data 
+```{r}
+jump_data <-read_excel("Jump_Data.xlsx")
+```
+
+##Cleaning data
+
+Taking out columns that are not necessary 
+```{r}
+sum(is.na(jump_data))
+#509 - column for body weight
+
+jump_data <- jump_data[,-c(2,6)]
+jump_data
+
+sum(is.na(jump_data))
+#0 
+
+```
+
+
+Making every athlete its own data set - to look for individual differences and looking at summary statistics for each 
+```{r}
+athlete1 <- jump_data[c(19:51), ]
+summary(athlete1$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete2 <- jump_data[c(70:102), ]
+summary(athlete2$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete3 <- jump_data[c(120:152), ]
+summary(athlete3$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete4 <- jump_data[c(168:197), ]
+summary(athlete4$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete5 <- jump_data[c(225:251), ]
+summary(athlete5$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete6 <- jump_data[c(270:302), ]
+summary(athlete6$`Jump Height (Flight Time) in Inches [in]`)
+
+#athlete 7 has one jump date we excluded since the weight was drastically different 
+athlete7 <- jump_data[c(321:338, 342:347), ]
+summary(athlete7$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete8 <- jump_data[c(369:398), ]
+summary(athlete8$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete9 <- jump_data[c(429:461), ]
+summary(athlete9$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete10 <- jump_data[c(480:509), ]
+summary(athlete10$`Jump Height (Flight Time) in Inches [in]`)
+```
+Combining all athlete's data into one new data set
+```{r}
+new_jump_data <- rbind(athlete1, athlete2, athlete3, athlete4, athlete5, athlete6, athlete7, athlete8, athlete9, athlete10)
+#names(new_jump_data) <- make.names(names(jump_data))
+```
+
+Reverse the order of the data frame to have it go from Janruary to April
+```{r}
+new_jump_data <- new_jump_data[nrow(new_jump_data):1,]
+```
+
+Mean difference from previous week for jump height and flight time:contraction time
+```{r}
+aths <- unique(new_jump_data[,c("Athlete", "Test Date")])
+
+mean_diff_flight_time <- rep(NA, nrow(new_jump_data))
+mean_diff_jump_height <- rep(NA, nrow(new_jump_data))
+mean_diff_concentric_impulse <- rep(NA, nrow(new_jump_data))
+mean_diff_eccentric_duration <- rep(NA, nrow(new_jump_data))
+mean_diff_force_zero <- rep(NA, nrow(new_jump_data))
+mean_diff_assymetry <- rep(NA, nrow(new_jump_data))
+mean_diff_peak_power <- rep(NA, nrow(new_jump_data))
+
+for(i in 2:nrow(new_jump_data)){
+  if(new_jump_data$Athlete[i] == new_jump_data$Athlete[i-1] &
+     new_jump_data$`Test Date`[i] != new_jump_data$`Test Date`[i-1]){
+    
+    mean_diff_flight_time[i:(i+2)] <- new_jump_data$`Flight Time:Contraction Time`[i:(i+2)]/mean(new_jump_data$`Flight Time:Contraction Time`[(i-3):(i-1)], na.rm = TRUE)
+    
+     mean_diff_jump_height[i:(i+2)] <- new_jump_data$`Jump Height (Flight Time) in Inches [in]`[i:(i+2)]/mean(new_jump_data$`Jump Height (Flight Time) in Inches [in]`[(i-3):(i-1)], na.rm = TRUE)
+     
+     mean_diff_concentric_impulse[i:(i+2)] <- new_jump_data$`Concentric Impulse [N s]`[i:(i+2)]/mean(new_jump_data$`Concentric Impulse [N s]`[(i-3):(i-1)], na.rm = TRUE)
+     
+      mean_diff_eccentric_duration[i:(i+2)] <- new_jump_data$`Eccentric Duration [ms]`[i:(i+2)]/mean(new_jump_data$`Eccentric Duration [ms]`[(i-3):(i-1)], na.rm = TRUE)
+      
+      mean_diff_force_zero[i:(i+2)] <- new_jump_data$`Force at Zero Velocity [N]`[i:(i+2)]/mean(new_jump_data$`Force at Zero Velocity [N]`[(i-3):(i-1)], na.rm = TRUE)
+      
+      mean_diff_assymetry[i:(i+2)] <- new_jump_data$`Eccentric Deceleration RFD Asymmetry [% L,R]`[i:(i+2)]/mean(new_jump_data$`Eccentric Deceleration RFD Asymmetry [% L,R]`[(i-3):(i-1)], na.rm = TRUE)
+      
+      mean_diff_peak_power[i:(i+2)] <- new_jump_data$`Eccentric Peak Power / BM [W/kg]`[i:(i+2)]/mean(new_jump_data$`Eccentric Peak Power / BM [W/kg]`[(i-3):(i-1)], na.rm = TRUE)
+
+    
+  }
+}
+
+new_jump_data$mean_diff_flight_time <- mean_diff_flight_time
+new_jump_data$mean_diff_jump_height <- mean_diff_jump_height
+new_jump_data$mean_diff_concentric_impulse <- mean_diff_concentric_impulse
+new_jump_data$mean_diff_eccentric_duration <- mean_diff_eccentric_duration
+new_jump_data$mean_diff_force_zero <- mean_diff_force_zero
+new_jump_data$mean_diff_assymetry<- mean_diff_assymetry
+new_jump_data$mean_diff_peak_power<- mean_diff_peak_power
+```
+
+Mean of next weeks jumps
+```{r}
+#aths <- unique(new_jump_data[,c("Athlete", "Test Date")])
+
+next_weeks_jump_height <- rep(NA, nrow(new_jump_data))
+
+for(i in 2:(nrow(new_jump_data)-2)){
+  if(new_jump_data$Athlete[i] == new_jump_data$Athlete[i+1] &
+     new_jump_data$`Test Date`[i] != new_jump_data$`Test Date`[i+1]){
+    
+      next_weeks_jump_height[i:(i-2)] <-mean(new_jump_data$`Jump Height (Flight Time) in Inches [in]`[(i+1):(i+3)], na.rm = TRUE)
+    
+  }
+}
+
+new_jump_data$next_weeks_jump_height <- next_weeks_jump_height
+```
+
+
+Deviations for Jump Height and Contraction Time from overall average
+```{r}
+jump_height_deviations <- rep(NA, nrow(new_jump_data))
+flight_time_deviations <- rep(NA, nrow(new_jump_data))
+
+
+for (i in unique(new_jump_data$Athlete)){
+  jump_height_deviation <- new_jump_data[which(new_jump_data$Athlete==i),]$`Jump Height (Flight Time) in Inches [in]` - mean(new_jump_data[which(new_jump_data$Athlete==i),]$`Jump Height (Flight Time) in Inches [in]`)
+  
+  jump_height_deviations[which(new_jump_data$Athlete==i)]<- jump_height_deviation
+  
+  flight_time_deviation <- new_jump_data[which(new_jump_data$Athlete==i),]$`Flight Time:Contraction Time` - mean(new_jump_data[which(new_jump_data$Athlete==i),]$`Flight Time:Contraction Time`)
+  
+  flight_time_deviations[which(new_jump_data$Athlete==i)] <- flight_time_deviation
+}
+
+new_jump_data$jump_height_deviations <- jump_height_deviations
+new_jump_data$flight_time_deviations <- flight_time_deviations
+```
+
+

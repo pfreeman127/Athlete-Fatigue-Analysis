@@ -1,0 +1,1151 @@
+---
+title: Initial Data Anayysis - Project
+Names: Page Freeman, Megan Glass, Emily Wilkinson, Lauren Beaudreau
+output: html_notebook
+---
+Libraries 
+```{r}
+library(tidyverse)
+#install.packages("plotmo")
+library(plotmo)
+#install.packages("readxl")
+library(readxl)
+
+```
+
+##Load the data 
+```{r}
+jump_data <-read_excel("Jump_Data.xlsx")
+```
+
+##Cleaning data
+
+Taking out columns that are not necessary 
+```{r}
+sum(is.na(jump_data))
+#509 - column for body weight
+
+jump_data <- jump_data[,-c(2,6)]
+jump_data
+
+sum(is.na(jump_data))
+#0 
+
+```
+
+
+
+
+##Analysis 
+
+Making every athlete its own data set - to look for individual differences and looking at summary statistics for each 
+```{r}
+athlete1 <- jump_data[c(19:51), ]
+summary(athlete1$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete2 <- jump_data[c(70:102), ]
+summary(athlete2$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete3 <- jump_data[c(120:152), ]
+summary(athlete3$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete4 <- jump_data[c(168:197), ]
+summary(athlete4$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete5 <- jump_data[c(225:251), ]
+summary(athlete5$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete6 <- jump_data[c(270:302), ]
+summary(athlete6$`Jump Height (Flight Time) in Inches [in]`)
+
+#athlete 7 has one jump date we excluded since the weight was drastically different 
+athlete7 <- jump_data[c(321:338, 342:347), ]
+summary(athlete7$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete8 <- jump_data[c(369:398), ]
+summary(athlete8$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete9 <- jump_data[c(429:461), ]
+summary(athlete9$`Jump Height (Flight Time) in Inches [in]`)
+
+athlete10 <- jump_data[c(480:509), ]
+summary(athlete10$`Jump Height (Flight Time) in Inches [in]`)
+```
+
+##Visualization 
+
+Combining all athlete's data into one new data set
+```{r}
+new_jump_data <- rbind(athlete1, athlete2, athlete3, athlete4, athlete5, athlete6, athlete7, athlete8, athlete9, athlete10)
+```
+
+
+Mean difference from previous week for jump height and flight time:contraction time
+```{r}
+head(new_jump_data)
+
+#new_jump_data <- new_jump_data[nrow(new_jump_data):1,]
+
+#names(new_jump_data) <- make.names(names(jump_data))
+
+aths <- unique(new_jump_data[,c("Athlete", "Test Date")])
+
+mean_diff_vec <- rep(NA, nrow(new_jump_data))
+
+for(i in 2:nrow(new_jump_data)){
+  if(new_jump_data$Athlete[i] == new_jump_data$Athlete[i-1] &
+     new_jump_data$`Test Date`[i] != new_jump_data$`Test Date`[i-1]){
+    
+    #mean_diff_vec[i:(i+2)] <- new_jump_data$`Flight Time:Contraction Time`[i:(i+2)]/mean(new_jump_data$`Flight Time:Contraction Time`[(i-3):(i-1)], na.rm = TRUE)
+    
+     mean_diff_vec[i:(i+2)] <- new_jump_data$`Jump Height (Flight Time) in Inches [in]`[i:(i+2)]/mean(new_jump_data$`Jump Height (Flight Time) in Inches [in]`[(i-3):(i-1)], na.rm = TRUE)
+
+    
+  }
+}
+
+# for(i in 1:length(aths)){
+#   mean_val <- mean(new_jump_data$`Flight Time:Contraction Time`[which(new)], na.rm = TRUE)
+#   
+#   
+# }
+
+new_jump_data$mean_diff_jump_height <- mean_diff_vec
+```
+
+
+
+Scatterplots to compare each athlete among various variables
+```{r}
+ scatter_jump_height <- ggplot(new_jump_data, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = factor(Athlete), 
+                  color = factor(Athlete))) + 
+  geom_boxplot(alpha = 0.7) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Jump Height",
+       x = "Athlete",
+       title = "Jump Height vs. Athlete")
+
+scatter_jump_height
+
+```
+
+
+```{r}
+
+scatter_peak_power <- ggplot(new_jump_data, 
+              aes(y = `Eccentric Peak Power / BM [W/kg]`, 
+                  x = factor(Athlete), 
+                  color = factor(Athlete))) + 
+  geom_boxplot(alpha = 0.7) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Eccentric Peak Power",
+       x = "Athlete",
+       title = "Eccentric Peak Power vs. Athlete")
+
+scatter_peak_power
+```
+
+```{r}
+scatter_contraction_time <- ggplot(new_jump_data, 
+              aes(y = `Flight Time:Contraction Time`, 
+                  x = factor(Athlete), 
+                  color = factor(Athlete))) + 
+  geom_boxplot(alpha = 0.7) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Flight Time : Contraction Time",
+       x = "Athlete",
+       title = "Flight Time:Contraction Time vs. Athlete")
+
+scatter_contraction_time
+```
+
+###Choosing athletes 3 and 8 for further analysis
+####Choosing athlete 10 for outliers to look at reliability
+
+####Athlete 3
+```{r}
+athlete3_plot <- ggplot(athlete3, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Eccentric Peak Power / BM [W/kg]`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Jump Height", 
+       x = "Eccentric Peak Power",
+       color = "Trial",
+       title = "Jump Height vs Eccentric Peak Power and Trial")
+
+athlete3_plot
+```
+
+```{r}
+athlete3_time <- ggplot(athlete3, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Test Date`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Jump Height", 
+       x = "Test Date",
+       color = "Trial",
+       title = "Jump Height vs Test Date and Trial")
+
+athlete3_time
+```
+
+####Athlete 8
+```{r}
+athlete8_plot <- ggplot(athlete8, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Eccentric Peak Power / BM [W/kg]`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Jump Height", 
+       x = "Eccentric Peak Power",
+       color = "Trial",
+       title = "Jump Height vs Eccentric Peak Power and Trial")
+
+athlete8_plot
+```
+
+```{r}
+athlete8_time <- ggplot(athlete8, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Test Date`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Jump Height", 
+       x = "Test Date",
+       color = "Trial",
+       title = "Jump Height vs Test Date and Trial")
+
+athlete8_time
+```
+####Athlete 10 
+```{r}
+athlete10_plot <- ggplot(athlete10, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Eccentric Peak Power / BM [W/kg]`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Jump Height", 
+       x = "Eccentric Peak Power",
+       color = "Trial",
+       title = "Jump Height vs Eccentric Peak Power and Trial")
+
+athlete10_plot
+```
+```{r}
+athlete10_time <- ggplot(athlete10, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Test Date`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Jump Height", 
+       x = "Test Date",
+       color = "Trial",
+       title = "Jump Height vs Test Date and Trial")
+
+athlete10_time
+```
+
+
+
+
+
+Checking the correlation between the variables
+```{r}
+#install.packages("psych")
+library(psych)
+all_correlations <- cor.plot(cor(new_jump_data[,-c(1,2,4)],))
+all_correlations
+
+correlations3 <- as.data.frame(cor(athlete3[,-c(1,2,4)],))
+correlations3
+
+correlations8 <- as.data.frame(cor(athlete8[,-c(1,2,4)],))
+correlations8
+
+correlations10 <- as.data.frame(cor(athlete10[,-c(1,2,4)],))
+correlations10
+```
+
+
+```{r}
+install.packages("ggcorrplot")
+```
+
+```{r}
+library(ggcorrplot)
+```
+
+```{r}
+g_1 <- ggcorrplot(cor(new_jump_data[,-c(1,2,4)]))
+
+ggsave(g_1, file = "corrplot.jpeg", width = 10, height = 10, dpi = 600)
+```
+
+
+Actual minus the average ... which variables did we want to do? and how do we want to store? this formula works to create a list and I did it for both athletes jump height
+```{r}
+SST_JH_3 <- (athlete3$`Jump Height (Flight Time) in Inches [in]`) - mean(athlete3$`Jump Height (Flight Time) in Inches [in]`)
+SST_JH_3
+
+SST_JH_8 <- (athlete8$`Jump Height (Flight Time) in Inches [in]`) - mean(athlete8$`Jump Height (Flight Time) in Inches [in]`)
+SST_JH_8
+
+
+SST_JH_10 <- (athlete10$`Jump Height (Flight Time) in Inches [in]`) - mean(athlete10$`Jump Height (Flight Time) in Inches [in]`)
+SST_JH_10
+```
+
+
+```{r}
+SST_FTCT_3 <- (athlete3$`Flight Time:Contraction Time`) - mean(athlete3$`Flight Time:Contraction Time`)
+SST_FTCT_3
+
+SST_FTCT_8 <- (athlete8$`Flight Time:Contraction Time`) - mean(athlete8$`Flight Time:Contraction Time`)
+SST_FTCT_8
+
+SST_FTCT_10 <- (athlete10$`Flight Time:Contraction Time`) - mean(athlete10$`Flight Time:Contraction Time`)
+SST_FTCT_10
+```
+Adding deviations to the data frame 
+```{r}
+#adjust column names if we keep 
+athlete_3_temp <- athlete3
+athlete_3_temp$SST_JH_3 <- SST_JH_3
+athlete_3_temp$SST_FTCT_3 <- SST_FTCT_3
+
+athlete_8_temp <- athlete8
+athlete_8_temp$SST_JH_8 <- SST_JH_8
+athlete_8_temp$SST_FTCT_8 <- SST_FTCT_8
+
+athlete_10_temp <- athlete10
+athlete_10_temp$SST_JH_10 <- SST_JH_10
+athlete_10_temp$SST_FTCT_10 <- SST_FTCT_10
+
+```
+
+
+
+
+
+Athelte 3 - visualizations 
+```{r}
+athlete3_time_deviation <- ggplot(athlete_3_temp, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Test Date`, 
+                  color = `SST_JH_3`)) + 
+  geom_point(alpha = 1) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_gradient(low = ("red"), high = ("green")) + 
+  labs(y = "Jump Height", 
+       x = "Test Date",
+       color = "Fatigue",
+       title = "Jump Height vs Test Date and Deviation")
+
+athlete3_time_deviation
+```
+
+```{r}
+deviation_plot_3 <- ggplot(athlete_3_temp, 
+              aes(y = `SST_JH_3`, 
+                  x = `Test Date`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Difference from Average", 
+       x = "Test Date",
+       color = "Trial",
+       title = "Difference from Average vs Test Date and Trial")
+deviation_plot_3
+```
+
+
+```{r}
+previous.week.plot.athlete3 <- ggplot(new_jump_data[which(new_jump_data$Athlete == 3), ], 
+              aes(y = `mean_diff_jump_height`, 
+                  x = `Test Date`)) + 
+  
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Jump Height Difference", 
+       x = "Test Date",
+       title = "Jump Height Difference from Previous Week vs Test Date ")
+previous.week.plot.athlete3
+```
+
+
+Athlete 7 - Page is injured
+```{r}
+previous.week.plot.athlete7 <- ggplot(new_jump_data[which(new_jump_data$Athlete == 7), ], 
+              aes(y = `mean_diff_jump_height`, 
+                  x = `Test Date`)) + 
+  
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Jump Height Difference", 
+       x = "Test Date",
+       title = "Jump Height Difference from Previous Week vs Test Date ")
+previous.week.plot.athlete7
+```
+
+Athlete 8 - visualizations
+```{r}
+
+athlete8_time_deviation <- ggplot(athlete_8_temp, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Test Date`, 
+                  color = `SST_JH_8`)) + 
+  geom_point(alpha = 1) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_gradient(low = ("red"), high = ("green")) + 
+  labs(y = "Jump Height", 
+       x = "Test Date",
+       color = "Fatigue",
+       title = "Jump Height vs Test Date and Deviation")
+
+athlete8_time_deviation
+```
+
+```{r}
+deviation_plot_8 <- ggplot(athlete_8_temp, 
+              aes(y = `SST_JH_8`, 
+                  x = `Test Date`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Difference from Average", 
+       x = "Test Date",
+       color = "Trial",
+       title = "Difference from Average vs Test Date and Trial")
+deviation_plot_8
+```
+
+```{r}
+previous.week.plot.athlete8 <- ggplot(new_jump_data[which(new_jump_data$Athlete == 8), ], 
+              aes(y = `mean_diff_jump_height`, 
+                  x = `Test Date`)) + 
+  
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Jump Height Difference", 
+       x = "Test Date",
+       title = "Jump Height Difference from Previous Week vs Test Date ")
+previous.week.plot.athlete8
+```
+
+Athlete 10 - visualizations 
+```{r}
+athlete10_time_deviation <- ggplot(athlete_10_temp, 
+              aes(y = `Jump Height (Flight Time) in Inches [in]`, 
+                  x = `Test Date`, 
+                  color = `SST_JH_10`)) + 
+  geom_point(alpha = 1) + 
+  geom_smooth(method = "lm",se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_gradient(low = ("red"), high = ("green")) + 
+  labs(y = "Jump Height", 
+       x = "Test Date",
+       color = "Fatigue",
+       title = "Jump Height vs Test Date and Deviation")
+
+athlete10_time_deviation
+```
+
+
+```{r}
+deviation_plot_10 <- ggplot(athlete_10_temp, 
+              aes(y = `SST_JH_10`, 
+                  x = `Test Date`, 
+                  color = `Trial`)) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  scale_color_manual(values =  c("Trial 1" = "blue", "Trial 2" = "red", "Trial 3" =  "green")) + 
+  labs(y = "Difference from Average", 
+       x = "Test Date",
+       color = "Trial",
+       title = "Difference from Average vs Test Date and Trial")
+deviation_plot_10
+```
+
+```{r}
+previous.week.plot.athlete10 <- ggplot(new_jump_data[which(new_jump_data$Athlete == 10), ], 
+              aes(y = `mean_diff_jump_height`, 
+                  x = `Test Date`)) + 
+  
+  geom_smooth(se = FALSE ) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(y = "Jump Height Difference", 
+       x = "Test Date",
+       title = "Jump Height Difference from Previous Week vs Test Date ")
+previous.week.plot.athlete10
+```
+
+##################################################################################
+
+Prediction 
+
+Clustering - kmeans
+
+Libraries
+```{r}
+#install.packages("devtools")
+#library(devtools) 
+#library(xgboost) 
+#library(caret) 
+#library(ggplot2) 
+#library(xgboostExplainer) 
+#library(pROC)
+#library(SHAPforxgboost) 
+
+#clustering libraries
+library(tidyr) 
+library(cluster)
+library(factoextra)
+library(sparcl) 
+library(teamcolors) 
+library(ggimage) 
+library(ggdark) 
+```
+Scaling
+```{r}
+scale_data <- scale(new_jump_data[,c(5:20)])
+
+# Add categorical variables back to data frame
+scale_data2 <- data.frame(scale_data)
+scale_data2$Athlete <- new_jump_data$Athlete
+scale_data2
+
+```
+
+cluster - kmeans
+4 centers
+```{r}
+set.seed(12345) 
+fit_1 <- kmeans(x = scale_data2[,-17], 
+                centers = 4,  
+                nstart = 25, 
+                iter.max = 100 ) 
+
+# Extract clusters
+clusters_1 <- fit_1$cluster
+# Extract centers
+centers_1 <- fit_1$centers
+
+summary(as.factor(clusters_1))
+```
+
+```{r}
+cat("Cluster 1 teams:\n")
+scale_data2$Athlete[clusters_1 == 1]
+# Check teams in cluster 2
+cat("Cluster 2 teams:\n")
+scale_data2$Athlete[clusters_1== 2]
+# Check teams in cluster 3
+cat("Cluster 3 teams:\n")
+scale_data2$Athlete[clusters_1 == 3]
+# Check teams in cluster 4
+cat("Cluster 4 teams:\n")
+scale_data2$Athlete[clusters_1 == 4]
+```
+
+
+
+checking how many factors are in each cluster
+```{r}
+kmean_withinss <- function(k) {
+  cluster <- kmeans( x = scale_data2[,-17],  # Set data to use
+                    centers = k,  # Set number of clusters as k, changes with input into function
+                    nstart = 25, # Set number of starts
+                    iter.max = 100) # Set max number of iterations
+  return (cluster$tot.withinss) # Return cluster error/within cluster sum of squares
+}
+
+
+# Set maximum cluster number
+max_k <-20
+# Run algorithm over a range of cluster numbers 
+wss <- sapply(2:max_k, kmean_withinss)
+
+
+# Create a data frame to plot the graph
+elbow <-data.frame(2:max_k, wss)
+
+# Plot the graph with ggplot
+g_e1 <- ggplot(elbow, # Set dataset
+              aes(x = X2.max_k, y = wss)) + # Set aesthetics
+  theme_set(theme_bw(base_size = 22) ) + # Set theme
+  geom_point(color = "blue") + # Set geom point for scatter
+  geom_line() + # Geom line for a line between points
+  scale_x_continuous(breaks = seq(1, 20, by = 1)) + # Set breaks for x-axis
+  labs(x = "Number of Clusters", y="Within Cluster \nSum of Squares") + # Set labels
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+# Generate plot
+g_e1
+```
+Based on the elbow, we will try 5 centers since we already did 4 clusters
+```{r}
+set.seed(12345) 
+fit_2 <- kmeans(x = scale_data2[ ,-17], 
+                centers = 5,  
+                nstart = 25, 
+                iter.max = 100 ) 
+# Extract clusters
+clusters_2 <- fit_2$cluster
+# Extract centers
+centers_2 <- fit_2$centers
+```
+
+
+```{r}
+cat("Cluster 1 teams:\n")
+scale_data2$Athlete[clusters_2 == 1]
+# Check teams in cluster 2
+cat("Cluster 2 teams:\n")
+scale_data2$Athlete[clusters_2 == 2]
+# Check teams in cluster 3
+cat("Cluster 3 teams:\n")
+scale_data2$Athlete[clusters_2 == 3]
+# Check teams in cluster 4
+cat("Cluster 4 teams:\n")
+scale_data2$Athlete[clusters_2 == 4]
+# Check teams in cluster 5
+cat("Cluster 5 teams:\n")
+scale_data2$Athlete[clusters_2 == 5]
+```
+
+
+
+Checking cluster quality
+
+Cardinality 
+```{r}
+plot_clust_cardinality <- cbind.data.frame(clusters_1, clusters_2) # Join clusters with  k =4 and k=6
+
+names(plot_clust_cardinality) <- c("k_4", "k_5") # Set names
+
+# Create bar plots
+g_2 <- ggplot(plot_clust_cardinality, aes( x = factor(k_4))) + # Set x as cluster values
+  geom_bar(stat = "count", fill = "steelblue") + # Use geom_bar with stat = "count" to count observations
+    labs(x = "Cluster Number", y="Points in Cluster", # Set labels
+         title = "Cluster Cardinality (k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_3 <- ggplot(plot_clust_cardinality, aes( x = factor(k_5))) + # Set x as cluster values
+  geom_bar(stat = "count", fill = "steelblue") + # Use geom_bar with stat = "count" to count observations
+    labs(x = "Cluster Number", y="Points in Cluster", # Set labels
+         title = "Cluster Cardinality (k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+# Generate bar plots
+g_2
+g_3
+```
+Cardinality looks a little better in cluster 5
+
+Magnitude
+```{r}
+k_4_mag <- cbind.data.frame(c(1:4), fit_1$withinss) # Extract within cluster sum of squares
+
+names(k_4_mag) <- c("cluster", "withinss") # Fix names for plot data
+
+
+# Create bar plot
+g_4 <- ggplot(k_4_mag, aes(x = cluster, y = withinss)) + # Set x as cluster, y as withinss
+  geom_bar(stat = "identity", fill = "steelblue") + # Use geom bar and stat = "identity" to plot values directly
+   labs(x = "Cluster Number", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude (k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+  
+k_5_mag <- cbind.data.frame(c(1:5), fit_2$withinss) # Extract within cluster sum of squares
+names(k_5_mag) <- c("cluster", "withinss") # Fix names for plot data
+
+# Create bar plot
+g_5 <- ggplot(k_5_mag, aes(x = cluster, y = withinss)) +  # Set x as cluster, y as withinss
+  geom_bar(stat = "identity", fill = "steelblue") + # Use geom bar and stat = "identity" to plot values directly
+   labs(x = "Cluster Number", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude (k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+# Generate plots
+g_4
+g_5
+```
+About even in magnitude across the different clusters
+
+
+```{r}
+k_4_dat <- cbind.data.frame(table(clusters_1), k_4_mag[,2]) # Join magnitude and cardinality
+
+names(k_4_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+# Create scatter plot
+g_6 <- ggplot(k_4_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size  = 4) +  # Set geom point for scatter
+ geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+k_5_dat <- cbind.data.frame(table(clusters_2), k_5_mag[,2]) # Join magnitude and cardinality
+
+names(k_5_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+# Create scatter plot
+g_7 <- ggplot(k_5_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size = 4) +  # Set geom point for scatter
+  geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+# Generate scatter plots
+g_6
+g_7
+```
+
+Magnitude vs. Cardinality looks better for cluster 4
+
+
+```{r}
+# Create silhouette plot summary
+fviz_nbclust(scale_data2[,-17], # Set dataset
+             kmeans,# Set clustering method
+             method = "silhouette", k.max = 20) # Set evaluation method
+```
+
+
+```{r}
+
+# Create vector of clusters
+cluster <- c(1: 4)
+# Extract centers
+center_df <- data.frame(cluster, centers_1)
+
+# Reshape the data
+center_reshape <- gather(center_df, features, values, Flight.Time.Contraction.Time:Eccentric.Peak.Power...BM..W.kg.)
+# View first few rows
+head(center_reshape)
+
+# Create plot
+g_heat_1 <- ggplot(data = center_reshape, # Set dataset
+                   aes(x = features, y = cluster, fill = values)) + # Set aesthetics
+  scale_y_continuous(breaks = seq(1, 4, by = 1)) + # Set y axis breaks
+  geom_tile() + # Geom tile for heatmap
+  coord_equal() +  # Make scale the same for both axis
+  theme_set(theme_bw(base_size = 22) ) + # Set theme
+  scale_fill_gradient2(low = "blue", # Choose low color
+                       mid = "white", # Choose mid color
+                       high = "red", # Choose high color
+                       midpoint =0, # Choose mid point
+                       space = "Lab", 
+                       na.value ="grey", # Choose NA value
+                       guide = "colourbar", # Set color bar
+                       aesthetics = "fill") + # Select aesthetics to apply
+  coord_flip() # Rotate plot to view names clearly
+# Generate plot
+g_heat_1
+```
+
+Cluster - with previous week data 
+```{r}
+pw.scale.data <- scale(new_jump_data[,c(5:21)])
+
+# Add categorical variables back to data frame
+pw.scale.data <- data.frame(pw.scale.data)
+pw.scale.data$Athlete <- new_jump_data$Athlete
+pw.scale.data <- na.omit(pw.scale.data)
+pw.scale.data
+```
+
+```{r}
+set.seed(12345) 
+fit_3 <- kmeans(x = pw.scale.data[,-18], 
+                centers = 4,  
+                nstart = 25, 
+                iter.max = 100 )
+
+# Extract clusters
+clusters_3 <- fit_3$cluster
+# Extract centers
+centers_3 <- fit_3$centers
+
+summary(as.factor(clusters_3))
+```
+
+```{r}
+cat("Cluster 1 teams:\n")
+pw.scale.data$Athlete[clusters_3 == 1]
+# Check teams in cluster 2
+cat("Cluster 2 teams:\n")
+pw.scale.data$Athlete[clusters_3== 2]
+# Check teams in cluster 3
+cat("Cluster 3 teams:\n")
+pw.scale.data$Athlete[clusters_3 == 3]
+cat("Cluster 1 teams:\n")
+pw.scale.data$Athlete[clusters_3 == 4]
+
+
+
+```
+
+```{r}
+# Create silhouette plot summary
+fviz_nbclust(pw.scale.data[,-18], # Set dataset
+             kmeans,# Set clustering method
+             method = "silhouette", k.max = 20) # Set evaluation method
+```
+
+```{r}
+kpw_4_mag <- cbind.data.frame(c(1:4), fit_3$withinss) # Extract within cluster sum of squares
+
+
+kpw_4_dat <- cbind.data.frame(table(clusters_3), kpw_4_mag[,2]) # Join magnitude and cardinality
+
+names(kpw_4_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+# Create scatter plot
+g_8 <- ggplot(kpw_4_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size = 4) +  # Set geom point for scatter
+  geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+g_8
+```
+
+
+```{r}
+# Create vector of clusters
+pw.cluster <- c(1: 4)
+# Extract centers
+pw.center_df <- data.frame(pw.cluster, centers_3)
+
+# Reshape the data
+pw.center_reshape <- gather(pw.center_df, features, values, Flight.Time.Contraction.Time:`mean_diff_jump_height`)
+# View first few rows
+head(pw.center_reshape)
+
+# Create plot
+g_heat_2 <- ggplot(data = pw.center_reshape, # Set dataset
+                   aes(x = features, y = pw.cluster, fill = values)) + # Set aesthetics
+  scale_y_continuous(breaks = seq(1, 4, by = 1)) + # Set y axis breaks
+  geom_tile() + # Geom tile for heatmap
+  coord_equal() +  # Make scale the same for both axis
+  theme_set(theme_bw(base_size = 22) ) + # Set theme
+  scale_fill_gradient2(low = "blue", # Choose low color
+                       mid = "white", # Choose mid color
+                       high = "red", # Choose high color
+                       midpoint =0, # Choose mid point
+                       space = "Lab", 
+                       na.value ="grey", # Choose NA value
+                       guide = "colourbar", # Set color bar
+                       aesthetics = "fill") + # Select aesthetics to apply
+  coord_flip() # Rotate plot to view names clearly
+# Generate plot
+g_heat_2
+```
+
+XGBoost model
+```{r}
+install.packages("devtools")
+library(devtools) 
+library(xgboost) 
+library(caret) 
+library(ggplot2) 
+#(xgboostExplainer) 
+library(pROC)
+library(SHAPforxgboost) 
+```
+
+
+```{r}
+train.rows <- sample(rownames(new_jump_data),dim(new_jump_data)[1]*0.7)
+
+# collect all the columns with training row ID into training set:
+train_data <- new_jump_data[train.rows, ]
+
+# assign row IDs that are not already in the training set, into validation 
+valid.rows <- setdiff(rownames(new_jump_data), train.rows) 
+test_data <- new_jump_data[valid.rows, ]
+```
+
+```{r}
+#have to do as.numeric - 1 because it starts counting at 1 and we want 0,1
+# Create training matrix
+dtrain <- xgb.DMatrix(data = as.matrix(train_data[, 6:30]), label = train_data$`Jump Height (Flight Time) in Inches [in]`)
+# Create test matrix
+dtest <- xgb.DMatrix(data = as.matrix(test_data[, 6:30]), label = test_data$`Jump Height (Flight Time) in Inches [in]`) 
+```
+
+
+# Predict Jump Height from given data
+```{r}
+set.seed(111111)
+bst_1 <- xgboost(data = dtrain, 
+                 booster = "gblinear",
+              
+               nrounds = 100,
+               
+               verbose = 1, 
+                print_every_n = 20, 
+               
+               eval_metric = "rmse") 
+
+summary(bst_1)
+bst_1
+```
+
+```{r}
+boost_preds_1 <- predict(bst_1, dtest)
+
+#mean square error
+mean((test_data$`Jump Height (Flight Time) in Inches [in]`-boost_preds_1)^2)
+
+bst_1$evaluation_log
+
+#mean absolute error
+caret::MAE(test_data$`Jump Height (Flight Time) in Inches [in]`, boost_preds_1)
+
+#RMSE
+caret::RMSE(test_data$`Jump Height (Flight Time) in Inches [in]`, boost_preds_1)
+
+#R squared
+mean_test_1 <- mean(test_data$`Jump Height (Flight Time) in Inches [in]`)
+tss = sum((test_data$`Jump Height (Flight Time) in Inches [in]` - mean_test_1)^2)
+
+rss =  sum((test_data$`Jump Height (Flight Time) in Inches [in]` - boost_preds_1)^2)
+
+rsq <- 1 - (rss/tss)
+rsq
+```
+
+```{r}
+reg <- lm(`Jump Height (Flight Time) in Inches [in]` ~ mean_diff_jump_height, data = new_jump_data, na.action = na.omit)
+summary(reg)
+
+reg2 <- lm(`Jump Height (Flight Time) in Inches [in]` ~ . -Athlete - `Test Date` - `Body Weight [kg]` - Trial , data = new_jump_data, na.action = na.omit)
+summary(reg2)
+
+reg3 <- lm(mean_diff_jump_height ~ . -Athlete - `Test Date` - `Body Weight [kg]` - Trial , data = new_jump_data, na.action = na.omit)
+summary(reg3)
+```
+
+# Predict Next weeks Jump Height From Given Data
+```{r}
+train_data2 <- na.omit(train_data)
+test_data2 <- na.omit(test_data)
+# Create training matrix
+dtrain2 <- xgb.DMatrix(data = as.matrix(train_data2[, -c(1:4, 28)]), label = train_data2$next_weeks_jump_height)
+# Create test matrix
+dtest2 <- xgb.DMatrix(data = as.matrix(test_data2[, -c(1:4, 28)]), label = test_data2$next_weeks_jump_height) 
+
+
+dtrain2 <- xgb.DMatrix(data = as.matrix(train_data[which(is.numeric(train_data$next_weeks_jump_height)), -c(1:4, 28)]), label = train_data$next_weeks_jump_height[which(is.numeric(train_data$next_weeks_jump_height))])
+# Create test matrix
+dtest2 <- xgb.DMatrix(data = as.matrix(test_data[which(is.numeric(test_data$next_weeks_jump_height)), -c(1:4, 28)]), label = test_data$next_weeks_jump_height[which(is.numeric(test_data$next_weeks_jump_height))]) 
+```
+
+```{r}
+set.seed(111111)
+bst_2 <- xgboost(data = dtrain2, 
+                 booster = "gblinear",
+              
+               nrounds = 100,
+               
+               verbose = 1, 
+                print_every_n = 20, 
+               
+               eval_metric = "rmse") 
+
+summary(bst_2)
+bst_2
+```
+```{r}
+min(bst_2$evaluation_log$train_rmse)
+```
+
+```{r}
+boost_preds_2 <- predict(bst_2, dtest2)
+
+#mean square error
+mean((test_data2$next_weeks_jump_height - boost_preds_2)^2)
+
+
+#mean absolute error
+caret::MAE(test_data2$next_weeks_jump_height, boost_preds_2)
+
+#RMSE
+caret::RMSE(test_data2$next_weeks_jump_height, boost_preds_2)
+
+#R squared
+mean_test_2 <- mean(test_data2$next_weeks_jump_height)
+tss = sum((test_data2$next_weeks_jump_height - mean_test_2)^2)
+
+rss =  sum((test_data2$next_weeks_jump_height - boost_preds_2)^2)
+
+rsq <- 1 - (rss/tss)
+rsq
+```
+
+Variable Importance
+```{r}
+# Extract importance
+imp_mat <- xgb.importance(model = bst_2)
+# Plot importance (top 10 variables)
+xgb.plot.importance(imp_mat, top_n = 10)
+```
+
+
+```{r}
+reg4 <- lm(next_weeks_jump_height ~ . -Athlete - `Test Date` - `Body Weight [kg]` - Trial, data = new_jump_data, na.action = na.omit)
+summary(reg4)
+
+reg5 <- lm(next_weeks_jump_height ~ mean_diff_flight_time + mean_diff_jump_height + mean_diff_concentric_impulse + mean_diff_eccentric_duration + mean_diff_force_zero + mean_diff_assymetry + mean_diff_peak_power, data = new_jump_data, na.action = na.omit)
+summary(reg5)
+
+reg6 <- lm(next_weeks_jump_height ~ flight_time_deviations + jump_height_deviations, data = new_jump_data, na.action = na.omit)
+summary(reg6)
+
+reg7 <- lm(next_weeks_jump_height ~ `Flight Time:Contraction Time`  + `Jump Height (Flight Time) in Inches [in]`, data = new_jump_data, na.action = na.omit)
+summary(reg7)
+```
+
+
+
+
+
+
